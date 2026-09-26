@@ -13,7 +13,7 @@ namespace iiMenu
         public const string GUID = "corgi.gorillatag.iireborn";
         public const string Name = "ii Reborn";
         public const string Description = "A Gorilla Tag mod menu.";
-        public const string BuildTimestamp = "2026-09-08T00:00:00Z";
+        public const string BuildTimestamp = "2026-09-26T19:10:00Z";
         public const string Version = "1.1.0";
 
         public const string BaseDirectory = "iiReborn";
