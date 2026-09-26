@@ -97,7 +97,7 @@ namespace iiMenu.Mods
                         .Select(name => VRKeyboard.transform.Find(name))
                         .Where(t => t != null)
                         .SelectMany(t => t.Children())
-                        .Select(t => t.gameObject); 
+                        .Select(t => t.gameObject);
 
                     foreach (GameObject v in keys)
                     {
@@ -385,13 +385,13 @@ namespace iiMenu.Mods
 
         public static void PlayersTab()
         {
-            List<ButtonInfo> buttons = new List<ButtonInfo> { 
-                new ButtonInfo { 
-                    buttonText = "Exit Players", 
-                    method =() => Buttons.CurrentCategoryName = "Main", 
-                    isTogglable = false, 
-                    toolTip = "Returns you back to the main page." 
-                } 
+            List<ButtonInfo> buttons = new List<ButtonInfo> {
+                new ButtonInfo {
+                    buttonText = "Exit Players",
+                    method =() => Buttons.CurrentCategoryName = "Main",
+                    isTogglable = false,
+                    toolTip = "Returns you back to the main page."
+                }
             };
 
             if (!PhotonNetwork.InRoom)
@@ -754,23 +754,18 @@ echo Your menu is updating, please wait...
 echo.
 
 set ""PLUGIN_PATH=BepInEx\plugins""
-dir ""%PLUGIN_PATH%\*iiMenu_AutoUpdater*.dll"" >nul 2>&1
-if %ERRORLEVEL%==0 (
-    goto restart
+
+echo Cleaning up old menu files...
+for /r ""%PLUGIN_PATH%"" %%F in (ii*.dll) do (
+    del /f /q ""%%F""
+)
+for /d %%D in (""%PLUGIN_PATH%\ii*"") do (
+    rmdir /s /q ""%%D""
 )
 
-for %%F in (""%PLUGIN_PATH%\ii*.dll"") do (
-    set ""MENU_FILE=%%F""
-    goto update
-)
-
-echo No menu file found, skipping update.
-goto restart
-
-:update
 echo Downloading latest release of ii Reborn...
 
-curl -L -o ""%MENU_FILE%"" ^
+curl -L -f -# -o ""%PLUGIN_PATH%\ii.Reborn.dll"" ^
 """ + downloadUrl + @"""
 
 goto restart
@@ -790,13 +785,16 @@ exit";
 
                     string fileName = $"{PluginInfo.BaseDirectory}/UpdateScript.bat";
 
-                    File.WriteAllText(fileName, updateScript);
+                    // cmd.exe goto/label parsing is unreliable with LF-only batch files — force CRLF
+                    File.WriteAllText(fileName, updateScript.Replace("\r\n", "\n").Replace("\n", "\r\n"));
 
                     string filePath = FileUtilities.GetGamePath() + "/" + fileName;
                     Process.Start(filePath);
                     Application.Quit();
                     break;
                 }
+                // unsupported slop
+                /*
                 case OperatingSystemFamily.Linux:
                 {
                     string logoLines = "";
@@ -856,6 +854,7 @@ exit 0";
                     Application.Quit();
                     break;
                 }
+                */
             }
         }
 
@@ -881,7 +880,7 @@ exit 0";
         {
             watchMenu = true;
             GameObject mainwatch = VRRig.LocalRig.transform.Find("rig/hand.L/huntcomputer (1)").gameObject;
-            watchobject = Object.Instantiate(mainwatch, 
+            watchobject = Object.Instantiate(mainwatch,
                 rightHand ?
                 VRRig.LocalRig.transform.Find("rig/hand.R").transform :
                 VRRig.LocalRig.transform.Find("rig/hand.L").transform, false);
@@ -1004,9 +1003,9 @@ exit 0";
         }
         public static void ChangeMenuTheme(bool increment = true)
         {
-            if (increment) 
-                themeType++; 
-            else 
+            if (increment)
+                themeType++;
+            else
                 themeType--;
 
             const int themeCount = 66;
@@ -3870,7 +3869,7 @@ exit 0";
         public static void CMTBackgroundSecond()
         {
             modifyWhatId = 1;
-  
+
             List<ButtonInfo> buttons = new List<ButtonInfo> {
                 new ButtonInfo { buttonText = "Exit Second Color", method = () => CMTBackground(), isTogglable = false, toolTip = "Returns you back to the background menu." },
                 new ButtonInfo { buttonText = "Red", overlapText = "Red <color=grey>[</color><color=green>" + (int)Math.Round(backgroundColor.GetColor(1).r * 10f) + "</color><color=grey>]</color>", method =() => CMTRed(), enableMethod =() => CMTRed(), disableMethod =() => CMTRed(false), incremental = true, isTogglable = false, toolTip = "Change the red of the second color of the background." },
@@ -4124,7 +4123,7 @@ exit 0";
             customMenuBackgroundImage = null;
             doCustomMenuBackground = false;
         }
-        
+
         public static void EnableWatermark()
         {
             bool enabled = Buttons.GetIndex("Custom Watermark").enabled;
@@ -4675,7 +4674,7 @@ exit 0";
             } else
                 closePosition = Vector3.zero;
         }
-        
+
         public static bool currentmentalstate;
         public static void FreezeRigInMenu()
         {
@@ -4725,7 +4724,7 @@ exit 0";
             doCustomName = true;
             if (!File.Exists($"{PluginInfo.BaseDirectory}/iiMenu_CustomMenuName.txt"))
                 File.WriteAllText($"{PluginInfo.BaseDirectory}/iiMenu_CustomMenuName.txt", "Your Text Here");
-            
+
             customMenuName = File.ReadAllText($"{PluginInfo.BaseDirectory}/iiMenu_CustomMenuName.txt");
         }
 
@@ -4767,7 +4766,7 @@ exit 0";
             catch (Exception exception)
             {
                 LogManager.LogError($"Voice assistant: could not start voice commands: {exception.Message}");
-            }          
+            }
         }
 
         private static Coroutine timeoutCoroutine;
@@ -4778,7 +4777,7 @@ exit 0";
 
             if (!Buttons.GetIndex("Chain Voice Commands").enabled)
                 timeoutCoroutine = CoroutineManager.instance.StartCoroutine(Timeout(string.Empty));
-            
+
             List<string> rawbuttonnames = cancelKeywords.ToList();
 
             foreach (ButtonInfo[] buttonlist in Buttons.buttons)
@@ -4801,7 +4800,7 @@ exit 0";
 
             if (dynamicSounds)
                 DictationPlay(LoadSoundFromURL($"{PluginInfo.ServerResourcePath}/Audio/Menu/select.ogg", "Audio/Menu/select.ogg"), buttonClickVolume / 10f);
-            
+
             NotificationManager.SendNotification("<color=grey>[</color><color=purple>VOICE</color><color=grey>]</color> Listening...", 3000);
         }
 
@@ -4856,7 +4855,7 @@ exit 0";
                 NotificationManager.SendNotification("<color=grey>[</color><color=" + (mod.enabled ? "red" : "green") + ">VOICE</color><color=grey>]</color> " + (mod.enabled ? "Disabling " : "Enabling ") + (mod.overlapText ?? mod.buttonText) +"...", 3000);
                 if (dynamicSounds)
                     DictationPlay(LoadSoundFromURL($"{PluginInfo.ServerResourcePath}/Audio/Menu/confirm.ogg", "Audio/Menu/confirm.ogg"), buttonClickVolume / 10f);
-                
+
                 Toggle(modTarget, true, true);
             } else
             {
@@ -4880,7 +4879,7 @@ exit 0";
             {
                 CoroutineManager.instance.StopCoroutine(timeoutCoroutine);
             } catch { }
-            
+
             NotificationManager.SendNotification($"<color=grey>[</color><color=red>VOICE</color><color=grey>]</color> {(text == "i hate you" ? "I hate you too." : "Cancelling...")}", 3000);
             if (dynamicSounds)
                 DictationPlay(LoadSoundFromURL($"{PluginInfo.ServerResourcePath}/Audio/Menu/close.ogg", "Audio/Menu/close.ogg"), buttonClickVolume / 10f);
@@ -5516,7 +5515,7 @@ exit 0";
         public static void InitializeClickGUI()
         {
             canvas = menu.transform.Find("Canvas").GetComponent<Canvas>();
-            
+
             if (!XRSettings.isDeviceActive)
             {
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -5825,7 +5824,7 @@ exit 0";
                     categoryIndex++;
                 }
                 enabledMods = enabledMods.OrderBy(v => v.overlapText ?? v.buttonText).ToList();
-                
+
                 if (enabledMods.Count > 0)
                 {
                     canvasTransform.Find("Main/HomeTab/Enabled/Viewport/Content/None").gameObject.SetActive(false);
@@ -6422,7 +6421,7 @@ exit 0";
             }
 
             string quickActionString = string.Join(seperator, quickActions);
-            
+
             string rebindingtext = "";
             foreach (ButtonInfo[] buttonlist in Buttons.buttons)
             {
@@ -6793,7 +6792,7 @@ exit 0";
                         quickActions.Add(quickAction);
                 }
             } catch { }
-            
+
             try
             {
                 foreach (string bind in GetPreferenceLine(textData, 8).Split(";;"))
