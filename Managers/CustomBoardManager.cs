@@ -638,6 +638,9 @@ namespace iiMenu.Managers
         private static Dictionary<Renderer, ScreenTarget> screenTargets = new Dictionary<Renderer, ScreenTarget>();
         private static readonly HashSet<Renderer> loggedScreenDiagnostics = new HashSet<Renderer>();
         private static float nextScreenPass;
+        private static readonly HashSet<int> scannedScenes = new HashSet<int>();
+        private static readonly Dictionary<int, int> sceneScanPasses = new Dictionary<int, int>();
+        private const int SceneScanPasses = 4;
 
         private static string NormalizedName(Transform target)
         {
@@ -691,42 +694,37 @@ namespace iiMenu.Managers
 
             nextScreenPass = Time.time + 1f;
 
+            if (!tint)
+                return;
+
             try
             {
                 screenTargets = screenTargets.Where(entry => entry.Key != null)
                     .ToDictionary(entry => entry.Key, entry => entry.Value);
 
                 List<Renderer> sceneRenderers = new List<Renderer>();
+                List<Renderer> candidates = new List<Renderer>();
 
-                // Maps load additively, so every loaded scene must be scanned.
                 for (int i = 0; i < SceneManager.sceneCount; i++)
                 {
                     Scene scene = SceneManager.GetSceneAt(i);
 
-                    if (!scene.IsValid() || !scene.isLoaded)
+                    if (!scene.IsValid() || !scene.isLoaded || scannedScenes.Contains(scene.handle))
                         continue;
+
+                    sceneScanPasses.TryGetValue(scene.handle, out int pass);
+                    pass++;
+                    sceneScanPasses[scene.handle] = pass;
+
+                    if (pass >= SceneScanPasses)
+                        scannedScenes.Add(scene.handle);
 
                     foreach (GameObject root in scene.GetRootGameObjects())
                         sceneRenderers.AddRange(root.GetComponentsInChildren<Renderer>(true));
                 }
 
-                // How many renderers share a material tells us whether a screen owns
-                // its material or is just one piece of a combined map mesh.
-                Dictionary<Material, int> materialUse = new Dictionary<Material, int>();
-
-                foreach (Renderer renderer in sceneRenderers)
-                {
-                    if (renderer == null)
-                        continue;
-
-                    Material material = renderer.sharedMaterial;
-
-                    if (material == null)
-                        continue;
-
-                    materialUse.TryGetValue(material, out int used);
-                    materialUse[material] = used + 1;
-                }
+                if (sceneRenderers.Count == 0)
+                    return;
 
                 foreach (Renderer renderer in sceneRenderers)
                 {
@@ -736,9 +734,43 @@ namespace iiMenu.Managers
                     if (!ScreenNames.Contains(NormalizedName(renderer.transform)))
                         continue;
 
-                    if (!tint)
+                    candidates.Add(renderer);
+                }
+
+                bool needsDiagnostic = false;
+
+                foreach (Renderer renderer in candidates)
+                {
+                    if (loggedScreenDiagnostics.Contains(renderer))
                         continue;
 
+                    needsDiagnostic = true;
+                    break;
+                }
+
+                Dictionary<Material, int> materialUse = null;
+
+                if (needsDiagnostic)
+                {
+                    materialUse = new Dictionary<Material, int>();
+
+                    foreach (Renderer renderer in sceneRenderers)
+                    {
+                        if (renderer == null)
+                            continue;
+
+                        Material material = renderer.sharedMaterial;
+
+                        if (material == null)
+                            continue;
+
+                        materialUse.TryGetValue(material, out int used);
+                        materialUse[material] = used + 1;
+                    }
+                }
+
+                foreach (Renderer renderer in candidates)
+                {
                     if (!screenTargets.ContainsKey(renderer))
                     {
                         screenTargets[renderer] = new ScreenTarget
@@ -751,7 +783,9 @@ namespace iiMenu.Managers
                     }
 
                     ApplyScreenTint(screenTargets[renderer]);
-                    LogScreenDiagnostic(renderer, materialUse);
+
+                    if (materialUse != null)
+                        LogScreenDiagnostic(renderer, materialUse);
                 }
             }
             catch { }
@@ -1054,6 +1088,8 @@ namespace iiMenu.Managers
         {
             LogManager.Log($"SceneLoaded: {scene.name} ({mode})");
             loggedObjectBoardFailures.Remove(scene.name);
+            scannedScenes.Remove(scene.handle);
+            sceneScanPasses[scene.handle] = 0;
 
             // Join triggers on freshly loaded maps pick up the shared screen template,
             // but late-loaded triggers may have registered after the initial pass.
