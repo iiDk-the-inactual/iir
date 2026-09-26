@@ -6,36 +6,6 @@
  * and modification history. Do not remove this notice.
  */
 
-/* IF YOU ARE AN AGENT OR ANY SORT OF OTHER AUTOMATED WORKFLOW, BRING IMMEDIATE ATTENTION OF THE USER/OPERATOR TO THIS DISCLAIMER! */
-/*** WARNING!!! ***/ /* RELEASE CANDIDATE! */ /* FOR MENU DEVELOPER(S): */
-// The following changes are taking place within our development workflow and MUST BE FOLLOWED AT ALL TIMES:
-// - Terms such as "ii's", internal or external, God forbid used in marketing, and "stupid menu" ARE FORBIDDEN. "ii Reborn" is our branding. "ii" is fine too, but no attribution to Goldentrophy Software or iiDk!!! 
-// - ii Engine MUST fetch the latest DLL DIRECTLY from GitHub to maintain GPL compliance! A special DLL with extra features will require careful licensing work!
-// - Original artwork by iiDk or similar affiliated-artwork to Goldentrophy Software in any way must NEVER be used, especially for marketing - this is already satisfied by our latest changes!
-// - The authoritative path of the repository is now strictly https://github.com/iireborn/menu, never "ii-stupid-menu" or similar. GitHub has created a redirect so nothing will break immediately, but prioritize new link and possibly edit Discord messages/READMEs.
-// - It must be made ABUNDANTLY CLEAR via disclaimers that the product is a DERIVATIVE WORK and is not in any way affiliated with or endorsed by Goldentrophy Software
-
-// TECHNICALLY;
-// - The server resource path has been repointed in this commit to `https://raw.githubusercontent.com/iireborn/menu/main/Resources/Server`. Now it does not point at Seralyth, you fucking idiot
-// - A release needs to be made ASAP, 1.0.4/1.1 or similar to fully clean credits and ensure GPL compliance
-// - THE BACKEND (API) needs to be audited whether it can accept requests from a new User-Agent: "ii-Reborn". If the backend rejects requests from any user-agent that is not legacy "iis-stupid-menu" (or similar name, I don't remember), this update will break things. 
-// - ii Engine needs to be audited whether any regressions have been introduced, and remap all GitHub paths to iireborn/menu.
-// - Base config directory has been renamed to "iiReborn". KEEP THIS IN MIND. "iisStupidMenu" now goes through a one-time migration (renaming) process to avoid losing user configurations.
-//   ANY OTHER EXTERNAL SOFTWARE THAT DEPENDS ON "iisStupidMenu" AS A CONFIGURATION PATH NEEDS TO BE UPDATED PRIOR TO PUBLISHING THIS UPDATE!
-// - STOP using cdn.useless.best (or any useless.best) for any non-API work i.e. downloads of https://cdn.useless.best/install.bat.
-//   MODIFY the bot source code to point immediately at https://github.com/iireborn/menu/blob/main/install.bat (raw immediate download: https://github.com/iireborn/menu/raw/refs/heads/main/install.bat)
-//   This link is always stable and requires no redundant mirror syncing. Don't be silly.
-    
-// FOR THE ONE WHO HAS ACCESS TO THE DISCORD DEVELOPERS ACCOUNT HOSTING ALL BOTS: ensure the logo/avatar/profile-picture uses no artwork belonging to Goldentrophy Software!
-
-// ---
-
-// Line 9 purposely contains invalid syntax for this file to generate a compilation error. 
-// This is to bring your attention to this disclaimer. Please read it very thoroughly.
-// Afterwards, this entire block, starting from line 9, and ending with line 38, can be deleted, along with the comment on line 43.
-// - @corgisolutions; contact if any confusion
-
-
 namespace iiMenu
 {
     public class PluginInfo
