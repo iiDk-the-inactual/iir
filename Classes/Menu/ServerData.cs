@@ -407,10 +407,12 @@ namespace iiMenu.Classes.Menu
 
         public static bool IsBehindSameScheme(string ourVersion, string theirVersion)
         {
-            int ours = VersionToNumber(ourVersion);
-            int theirs = VersionToNumber(theirVersion);
+            if (!Version.TryParse(ourVersion ?? "", out Version ours))
+                return false;
+            if (!Version.TryParse(theirVersion ?? "", out Version theirs))
+                return false;
 
-            return ours >= 0 && theirs >= 0 && ours / 100 == theirs / 100 && ours < theirs;
+            return ours.Major == theirs.Major && ours < theirs;
         }
 
         public static IEnumerator LoadServerData()
