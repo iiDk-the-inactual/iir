@@ -9,7 +9,7 @@
 using iiMenu;
 using System.Reflection;
 
-[assembly: AssemblyCompany("Goldentrophy Software")]
+[assembly: AssemblyCompany("ii Reborn, derivative of Goldentrophy Software")]
 
 #if DEBUG
 [assembly: AssemblyConfiguration("Debug")]
