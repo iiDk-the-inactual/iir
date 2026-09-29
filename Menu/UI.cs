@@ -59,6 +59,10 @@ namespace iiMenu.Menu
             g = canvas.Find("ControlUI/G").GetComponent<TMP_InputField>();
             b = canvas.Find("ControlUI/B").GetComponent<TMP_InputField>();
             textInput = canvas.Find("ControlUI/TextInput").GetComponent<TMP_InputField>();
+            textInput.text = "iiReborn";
+            TMP_Text placeholderText = textInput.placeholder as TMP_Text;
+            if (placeholderText != null)
+                placeholderText.text = "iiReborn";
             LogManager.Log(canvas.Find("ControlUI/QueueButton"));
             canvas.Find("ControlUI/QueueButton").GetComponent<Button>().onClick.AddListener(() =>
             {
