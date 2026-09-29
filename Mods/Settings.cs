@@ -651,6 +651,7 @@ namespace iiMenu.Mods
                     buttonText = $"Category{button.buttonText.Hash()}",
                     overlapText = button.buttonText,
                     enabled = !skipButtons.Contains(button.buttonText),
+                    hideFromArraylist = true,
                     enableMethod =() => skipButtons.Remove(button.buttonText),
                     disableMethod =() => skipButtons.Add(button.buttonText),
                     toolTip = "Toggles the visibility of the category " + button.buttonText + "."
@@ -5820,7 +5821,7 @@ exit 0";
                 int categoryIndex = 0;
                 foreach (ButtonInfo[] buttonList in Buttons.buttons)
                 {
-                    enabledMods.AddRange(buttonList.Where(v => v.enabled && (!hideSettings || !Buttons.categoryNames[categoryIndex].Contains("Settings")) && (!hideMacros || !Buttons.categoryNames[categoryIndex].Contains("Macro"))));
+                    enabledMods.AddRange(buttonList.Where(v => v.enabled && !v.hideFromArraylist && (!hideSettings || !Buttons.categoryNames[categoryIndex].Contains("Settings")) && (!hideMacros || !Buttons.categoryNames[categoryIndex].Contains("Macro"))));
                     categoryIndex++;
                 }
                 enabledMods = enabledMods.OrderBy(v => v.overlapText ?? v.buttonText).ToList();
@@ -5939,8 +5940,10 @@ exit 0";
                         UpdateSearch();
                 }
 
-                if (!XRSettings.isDeviceActive)
-                    return;
+                // This used to bail out here when no VR device was active, which made the
+                // non VR branch a few lines below unreachable: the mouse raycast that
+                // branch performs could never run, so nothing on the UI could be pointed
+                // at or selected. The branch already handles both cases, so let it.
 
                 if (clickGuiLine == null)
                 {
@@ -6013,7 +6016,13 @@ exit 0";
                         clickGuiLine.gameObject.SetActive(true);
                 }
 
-                bool trigger = useLeft ? leftTrigger > 0.5f : rightTrigger > 0.5f;
+                // Everything below drives press, release and click off this one flag, and it
+                // used to be the controller trigger only. With no VR device there is no
+                // trigger, so nothing could ever be clicked, including the search field
+                // and the on screen keyboard. Use the left mouse button in that case.
+                bool trigger = !XRSettings.isDeviceActive
+                    ? Mouse.current != null && Mouse.current.leftButton.isPressed
+                    : useLeft ? leftTrigger > 0.5f : rightTrigger > 0.5f;
                 Vector2 currentPos = pointerData.position;
                 pointerData.delta = currentPos - lastPointerPos;
                 lastPointerPos = currentPos;
@@ -6304,7 +6313,7 @@ exit 0";
             {
                 foreach (ButtonInfo v in buttonlist)
                 {
-                    if (!v.detected && v.enabled && v.buttonText != "Save Preferences")
+                    if (!v.detected && v.enabled && !v.hideFromArraylist && v.buttonText != "Save Preferences")
                     {
                         if (enabledtext == "")
                             enabledtext += v.buttonText;

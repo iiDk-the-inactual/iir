@@ -189,9 +189,13 @@ namespace iiMenu.Utilities
                 return;
             }
 
-            PlayFabClientAPI.GetAccountInfo(new GetAccountInfoRequest { PlayFabId = userId }, delegate (GetAccountInfoResult result) // Who designed this
+            PlayFabClientAPI.GetPlayerProfile(new GetPlayerProfileRequest
             {
-                string creationDate = result.AccountInfo.Created.ToString(format);
+                PlayFabId = userId,
+                ProfileConstraints = new PlayerProfileViewConstraints { ShowCreated = true }
+            }, delegate (GetPlayerProfileResult result)
+            {
+                string creationDate = result.PlayerProfile.Created.Value.ToString(format);
                 creationDateCache[userId] = creationDate;
 
                 onTranslated?.Invoke(creationDate);
