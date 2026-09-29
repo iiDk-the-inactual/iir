@@ -651,6 +651,7 @@ namespace iiMenu.Mods
                     buttonText = $"Category{button.buttonText.Hash()}",
                     overlapText = button.buttonText,
                     enabled = !skipButtons.Contains(button.buttonText),
+                    hideFromArraylist = true,
                     enableMethod =() => skipButtons.Remove(button.buttonText),
                     disableMethod =() => skipButtons.Add(button.buttonText),
                     toolTip = "Toggles the visibility of the category " + button.buttonText + "."
@@ -5820,7 +5821,7 @@ exit 0";
                 int categoryIndex = 0;
                 foreach (ButtonInfo[] buttonList in Buttons.buttons)
                 {
-                    enabledMods.AddRange(buttonList.Where(v => v.enabled && (!hideSettings || !Buttons.categoryNames[categoryIndex].Contains("Settings")) && (!hideMacros || !Buttons.categoryNames[categoryIndex].Contains("Macro"))));
+                    enabledMods.AddRange(buttonList.Where(v => v.enabled && !v.hideFromArraylist && (!hideSettings || !Buttons.categoryNames[categoryIndex].Contains("Settings")) && (!hideMacros || !Buttons.categoryNames[categoryIndex].Contains("Macro"))));
                     categoryIndex++;
                 }
                 enabledMods = enabledMods.OrderBy(v => v.overlapText ?? v.buttonText).ToList();
@@ -6304,7 +6305,7 @@ exit 0";
             {
                 foreach (ButtonInfo v in buttonlist)
                 {
-                    if (!v.detected && v.enabled && v.buttonText != "Save Preferences")
+                    if (!v.detected && v.enabled && !v.hideFromArraylist && v.buttonText != "Save Preferences")
                     {
                         if (enabledtext == "")
                             enabledtext += v.buttonText;
