@@ -9,7 +9,7 @@
 using iiMenu;
 using System.Reflection;
 
-[assembly: AssemblyCompany("Goldentrophy Software")]
+[assembly: AssemblyCompany("ii Reborn, derivative of Goldentrophy Software")]
 
 #if DEBUG
 [assembly: AssemblyConfiguration("Debug")]
@@ -24,9 +24,9 @@ using System.Reflection;
 #if DEBUG
 [assembly: AssemblyProduct(PluginInfo.Name + " [Debug]")]
 [assembly: AssemblyTitle(PluginInfo.Name + " [Debug]")]
+[assembly: AssemblyDescription(PluginInfo.Description + " [Debug]")]
 #else
 [assembly: AssemblyProduct(PluginInfo.Name)]
 [assembly: AssemblyTitle(PluginInfo.Name)]
+[assembly: AssemblyDescription(PluginInfo.Description)]
 #endif
-
-[assembly: AssemblyDescription(PluginInfo.Description + " [Debug]")]

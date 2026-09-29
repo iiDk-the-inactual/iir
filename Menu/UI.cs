@@ -18,6 +18,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using static iiMenu.Menu.Main;
 using static iiMenu.Utilities.AssetUtilities;
@@ -33,6 +34,9 @@ namespace iiMenu.Menu
         private void Awake()
         {
             Instance = this;
+
+            SceneManager.sceneLoaded -= OnLegacyPanelSceneLoaded;
+            SceneManager.sceneLoaded += OnLegacyPanelSceneLoaded;
 
             if (File.Exists(hideGUIPath))
                 isOpen = false;
@@ -125,19 +129,78 @@ namespace iiMenu.Menu
             Update();
         }
 
+        private static readonly List<Transform> legacyPanels = new List<Transform>();
+        private static bool legacyPanelsDirty = true;
+        private static float legacyRescanTime;
+        private static float legacyRescanDelay = 2f;
+
+        private static void OnLegacyPanelSceneLoaded(Scene scene, LoadSceneMode mode) =>
+            legacyPanelsDirty = true;
+
         private void HideLegacyLtsPanel()
         {
             if (uiPrefab == null)
                 return;
 
-            foreach (TMP_Text text in Resources.FindObjectsOfTypeAll<TMP_Text>())
-                HideLegacyTextPanel(text.transform, text.text);
-
-            foreach (UnityEngine.UI.Text text in Resources.FindObjectsOfTypeAll<UnityEngine.UI.Text>())
-                HideLegacyTextPanel(text.transform, text.text);
-
             Transform canvas = uiPrefab.transform.Find("Canvas");
             canvas?.Find("HideMessage")?.gameObject.SetActive(false);
+
+            FrameProfiler.Begin("Legacy");
+
+            bool removedAny = false;
+
+            for (int i = legacyPanels.Count - 1; i >= 0; i--)
+            {
+                Transform panel = legacyPanels[i];
+
+                if (panel == null)
+                {
+                    legacyPanels.RemoveAt(i);
+                    removedAny = true;
+                    continue;
+                }
+
+                if (panel.gameObject.activeSelf)
+                    panel.gameObject.SetActive(false);
+            }
+
+            if (removedAny)
+                legacyPanelsDirty = true;
+
+            if (legacyPanelsDirty || (legacyPanels.Count == 0 && Time.time >= legacyRescanTime))
+                RescanLegacyPanels();
+
+            FrameProfiler.End();
+        }
+
+        private static void RescanLegacyPanels()
+        {
+            legacyPanelsDirty = false;
+
+            if (legacyPanels.Count == 0)
+            {
+                legacyRescanDelay = Mathf.Min(legacyRescanDelay * 2f, 60f);
+                legacyRescanTime = Time.time + legacyRescanDelay;
+            }
+
+            TMP_Text[] tmpTexts = UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            UnityEngine.UI.Text[] uiTexts = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            for (int i = 0; i < tmpTexts.Length; i++)
+            {
+                TMP_Text text = tmpTexts[i];
+
+                if (text != null)
+                    HideLegacyTextPanel(text.transform, text.text);
+            }
+
+            for (int i = 0; i < uiTexts.Length; i++)
+            {
+                UnityEngine.UI.Text text = uiTexts[i];
+
+                if (text != null)
+                    HideLegacyTextPanel(text.transform, text.text);
+            }
         }
 
         private static bool legacyPanelWarningLogged;
@@ -164,6 +227,9 @@ namespace iiMenu.Menu
 
                 return;
             }
+
+            if (!legacyPanels.Contains(panel))
+                legacyPanels.Add(panel);
 
             panel.gameObject.SetActive(false);
         }
@@ -197,7 +263,10 @@ namespace iiMenu.Menu
             {
                 legacyPanelCheckTime = Time.time + 1f;
                 HideLegacyLtsPanel();
+
+                FrameProfiler.Begin("TickRoom");
                 Managers.IiServersManager.TickRoom();
+                FrameProfiler.End();
             }
 
             if (UnityInput.Current.GetKeyDown(KeyCode.Backslash))

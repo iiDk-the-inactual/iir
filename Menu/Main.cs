@@ -224,6 +224,8 @@ namespace iiMenu.Menu
 
         public static void Prefix()
         {
+            FrameProfiler.Begin("Menu");
+
             WalkSimCursorPatch.EnsureInstalled();
 
             if (gunLocked && (lockTarget == null || !RigUtilities.IsUsableRig(lockTarget)))
@@ -1326,7 +1328,9 @@ namespace iiMenu.Menu
 
                 #region Execute Mods
                 // Plugins
+                FrameProfiler.Begin("Mods");
                 PluginManager.ExecuteUpdate();
+                FrameProfiler.End();
 
                 // Menu
                 foreach (ButtonInfo button in Buttons.buttons
@@ -1451,6 +1455,8 @@ namespace iiMenu.Menu
             {
                 LogManager.LogError($"Error with prefix at {exc.StackTrace}: {exc.Message}");
             }
+
+            FrameProfiler.End();
         }
 
         private static readonly List<string> postActions = new List<string>();

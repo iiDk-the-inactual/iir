@@ -4,6 +4,8 @@ try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::S
 
 $ManifestUrl = 'https://github.com/iireborn/menu/raw/refs/heads/main/menuversion.json'
 $BepInExUrl  = 'https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.4/BepInEx_win_x64_5.4.23.4.zip'
+
+# SECURITY SANITY CHECK! Verify this link is exactly the one you're copy-pasting into Win+R (between irm iex)
 $ScriptUrl   = 'https://github.com/iireborn/menu/raw/refs/heads/main/install.ps1'
 
 function Fail($msg) { Write-Host "`n$msg" -ForegroundColor Red; Read-Host 'Press Enter to exit'; exit 1 }
@@ -102,11 +104,14 @@ try {
             [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
         }
     } finally { $archive.Dispose() }
-} catch {
-    # extraction failed (typically write access denied) -> one elevated retry
+} catch {  # extraction failed (typically write access denied)
+
+    # retry
     if ($env:IIREBORN_ELEVATED -eq '1') { Fail "Failed to download/extract BepInEx ($($_.Exception.Message))" }
     Write-Host "BepInEx step failed: $($_.Exception.Message)" -ForegroundColor Yellow
     Write-Host 'Relaunching as administrator - accept the UAC prompt!!!' -ForegroundColor Yellow
+
+    # This is ONLY requested if the game files cannot be written without Administrator! ScriptUrl should be the exact same thing
     $child = '-NoProfile -Command "$env:IIREBORN_ELEVATED=''1''; irm ''' + $ScriptUrl + ''' | iex"'
     try {
         Start-Process powershell -Verb RunAs -ArgumentList $child

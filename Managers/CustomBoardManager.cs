@@ -199,6 +199,11 @@ namespace iiMenu.Managers
         private Material originalComputerMonitorMaterial;
         private Material originalConductScreenMaterial;
         private GameObject conductScreen;
+        private Transform treeRoomRoot;
+        private Transform forestRoot;
+        private static float nextMonitorSearch;
+        private static float nextConductSearch;
+        private float nextBoardRootSearch;
 
         public GameObject motdTitle;
         public GameObject motdText;
@@ -314,17 +319,19 @@ namespace iiMenu.Managers
 
             if (CustomBoardsEnabled)
             {
-                renderer.material = BoardMaterial;
+                renderer.sharedMaterial = BoardMaterial;
 
                 if (loggedBoardSurfaces.Add("plate:" + plates[index].name))
                     LogManager.Log($"Board plate: tinted {PathOf(plates[index])} chunks={plates.Count} original={(archive == null ? "none" : archive.name)}");
             }
             else if (archive != null)
-                renderer.material = archive;
+                renderer.sharedMaterial = archive;
         }
 
         public void Update()
         {
+            FrameProfiler.Begin("Board.Update");
+
             if (!hasFoundAllBoards)
             {
                 try
@@ -380,28 +387,34 @@ namespace iiMenu.Managers
                 }
             }
 
-            if (computerMonitor == null)
+            if (computerMonitor == null && Time.time >= nextMonitorSearch)
+            {
                 computerMonitor = GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/TreeRoomInteractables/GorillaComputerObject/ComputerUI/monitor/monitorScreen");
+                nextMonitorSearch = Time.time + 5f;
+            }
 
             Renderer computerMonitorRenderer = computerMonitor?.GetComponent<Renderer>();
             if (computerMonitorRenderer != null)
             {
                 originalComputerMonitorMaterial ??= computerMonitorRenderer.sharedMaterial;
                 if (CustomBoardsEnabled)
-                    computerMonitorRenderer.material = BoardMaterial;
+                    computerMonitorRenderer.sharedMaterial = BoardMaterial;
             }
 
             // The green panel under the Code of Conduct text is a plain mesh at a
             // fixed path, so it is tinted exactly like the computer monitor.
-            if (conductScreen == null)
+            if (conductScreen == null && Time.time >= nextConductSearch)
+            {
                 conductScreen = GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom/TreeRoomInteractables/UI/CodeOfConduct_Group/StaticUnlit/screen");
+                nextConductSearch = Time.time + 5f;
+            }
 
             Renderer conductScreenRenderer = conductScreen?.GetComponent<Renderer>();
             if (conductScreenRenderer != null)
             {
                 originalConductScreenMaterial ??= conductScreenRenderer.sharedMaterial;
                 if (CustomBoardsEnabled)
-                    conductScreenRenderer.material = BoardMaterial;
+                    conductScreenRenderer.sharedMaterial = BoardMaterial;
             }
 
             try
@@ -526,14 +539,20 @@ namespace iiMenu.Managers
                 }
             }
             catch { }
+
+            FrameProfiler.End();
         }
 
         // Screens are re-forced after every Update, so a material the game reassigns
         // during its own Update cannot beat the board color for a frame.
         public void LateUpdate()
         {
+            FrameProfiler.Begin("Board.Late");
+
             if (CustomBoardsEnabled && CustomBoardOrange)
                 ForceKnownScreens();
+
+            FrameProfiler.End();
         }
 
         private static readonly HashSet<string> loggedObjectBoardFailures = new HashSet<string>();
@@ -552,8 +571,19 @@ namespace iiMenu.Managers
 
             nextBoardSurfacePass = Time.time + 1f;
 
-            SwapLeaderboardPlate(GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom")?.transform, StumpLeaderboardIndex, ref instance.stumpMaterial);
-            SwapLeaderboardPlate(GetObject("Environment Objects/LocalObjects_Prefab/Forest")?.transform, ForestLeaderboardIndex, ref instance.forestMaterial);
+            if (Time.time >= instance.nextBoardRootSearch)
+            {
+                instance.nextBoardRootSearch = Time.time + 5f;
+
+                if (instance.treeRoomRoot == null)
+                    instance.treeRoomRoot = GetObject("Environment Objects/LocalObjects_Prefab/TreeRoom")?.transform;
+
+                if (instance.forestRoot == null)
+                    instance.forestRoot = GetObject("Environment Objects/LocalObjects_Prefab/Forest")?.transform;
+            }
+
+            SwapLeaderboardPlate(instance.treeRoomRoot, StumpLeaderboardIndex, ref instance.stumpMaterial);
+            SwapLeaderboardPlate(instance.forestRoot, ForestLeaderboardIndex, ref instance.forestMaterial);
 
             if (!CustomBoardsEnabled)
                 return;
@@ -598,7 +628,7 @@ namespace iiMenu.Managers
                         boardPanelMaterials[renderer] = renderer.sharedMaterial;
 
                     if (renderer.sharedMaterial != BoardMaterial)
-                        renderer.material = BoardMaterial;
+                        renderer.sharedMaterial = BoardMaterial;
                 }
                 else if (boardPanelMaterials.TryGetValue(renderer, out Material originalMaterial))
                 {
@@ -798,21 +828,28 @@ namespace iiMenu.Managers
             return materials == null || materials.Length == 0 ? new Material[1] : materials;
         }
 
+        private static readonly List<Renderer> staleScreenTargets = new List<Renderer>();
+
         private static void ForceKnownScreens()
         {
-            foreach (KeyValuePair<Renderer, ScreenTarget> entry in screenTargets.ToList())
+            staleScreenTargets.Clear();
+
+            foreach (KeyValuePair<Renderer, ScreenTarget> entry in screenTargets)
             {
                 Renderer renderer = entry.Key;
 
                 if (renderer == null)
                 {
                     RemoveScreenOverlay(entry.Value);
-                    screenTargets.Remove(renderer);
+                    staleScreenTargets.Add(renderer);
                     continue;
                 }
 
                 ApplyScreenTint(entry.Value);
             }
+
+            foreach (Renderer stale in staleScreenTargets)
+                screenTargets.Remove(stale);
         }
 
         private static void ApplyScreenTint(ScreenTarget target)
@@ -826,11 +863,18 @@ namespace iiMenu.Managers
             {
                 RemoveScreenOverlay(target);
 
-                Material[] current = renderer.sharedMaterials;
-                bool tinted = current != null && current.Length == target.originals.Length;
+                bool tinted;
 
-                for (int i = 0; tinted && i < current.Length; i++)
-                    tinted = current[i] == BoardMaterial;
+                if (target.originals.Length <= 1)
+                    tinted = renderer.sharedMaterial == BoardMaterial;
+                else
+                {
+                    Material[] current = renderer.sharedMaterials;
+                    tinted = current != null && current.Length == target.originals.Length;
+
+                    for (int i = 0; tinted && i < current.Length; i++)
+                        tinted = current[i] == BoardMaterial;
+                }
 
                 if (tinted)
                     return;
@@ -1070,11 +1114,11 @@ namespace iiMenu.Managers
         {
             Renderer renderer = computerMonitor?.GetComponent<Renderer>();
             if (renderer != null && originalComputerMonitorMaterial != null)
-                renderer.material = originalComputerMonitorMaterial;
+                renderer.sharedMaterial = originalComputerMonitorMaterial;
 
             Renderer conductRenderer = conductScreen?.GetComponent<Renderer>();
             if (conductRenderer != null && originalConductScreenMaterial != null)
-                conductRenderer.material = originalConductScreenMaterial;
+                conductRenderer.sharedMaterial = originalConductScreenMaterial;
         }
         #endregion
 
@@ -1120,7 +1164,7 @@ namespace iiMenu.Managers
                 board.transform.localScale = scale ?? new Vector3(21.6f, 2.4f, 22f);
 
                 Destroy(board.GetComponent<Collider>());
-                board.GetComponent<Renderer>().material = BoardMaterial;
+                board.GetComponent<Renderer>().sharedMaterial = BoardMaterial;
 
                 objectBoards.Add(scene, board);
 
